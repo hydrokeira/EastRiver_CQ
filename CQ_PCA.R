@@ -15,17 +15,21 @@ ERCQ$date<-as.Date(ERCQ$date)
 ERCQ$month<-month(ERCQ$date)
 ERCQ$WY<-get_waterYear(ERCQ$date)
 
-ERCQ<-subset(ERCQ, ERCQ$value > 0)
-
 month_year_count<-ERCQ %>%
   group_by(month, variable) %>%
-  summarise(n_obs=n_distinct(daily_q_cms))
+  summarise(n_obs=n_distinct(discharge))
 
 ercq_monthly<-ERCQ %>%
   group_by(month, variable) %>%
   summarise(
-    slope=coef(lm(log(value)~log(daily_q_cms)))[2]
+    slope=coef(lm(log(value)~log(discharge)))[2]
   )
+
+ggplot(ERCQ, aes(log10(discharge),log10(value), col=month))+geom_point()+facet_wrap(~variable, scales = "free")+
+  theme_bw()
+
+ggplot(ERCQ, aes(log10(discharge),log10(value), col=WY))+geom_point()+facet_wrap(~variable, scales = "free")+
+  theme_bw()
 
 ercq_monthly_wide <- dcast(ercq_monthly, value.var = "slope", formula = month~variable)
 ercq_monthly_wide<-ercq_monthly_wide[ , apply(ercq_monthly_wide, 2, function(x) !any(is.na(x)))]
