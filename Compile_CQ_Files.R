@@ -1,4 +1,5 @@
 library(dataRetrieval)
+library(dplyr)
 
 setwd("/Users/keirajohnson/Box Sync/Keira_Johnson/ER_CQ/PH")
 
@@ -10,13 +11,13 @@ for (i in 1:length(ph_files)) {
   
   chem1<-read.csv(ph_files[i])
   
-  col_name<-paste0(colnames(chem1[2]), "_", chem1[1,2])
+  chem1<-chem1[,-3]
+  
+  col_name<-colnames(chem1[2])
   
   colnames(chem1)<-c("date", "value")
   
   chem1$variable<-col_name
-  
-  chem1<-chem1[-1,]
   
   chem1$date<-as.Date(chem1$date)
   
@@ -32,46 +33,59 @@ ph_all_chem<-do.call(bind_rows, ph_list)
 
 dl<-read.csv("/Users/keirajohnson/Box Sync/Keira_Johnson/ER_CQ/PH_Cation_DL.csv")
 
+colnames(dl)[3]<-"variable_units"
+
+dl$variable<-sub("_.*", "", dl$variable_units)
+
+dl[45,5]<-"ammonia_n"
+
 ph_all_chem_dl<-full_join(ph_all_chem, dl)
 
 ph_all_chem_dl$DL_ppb[is.na(ph_all_chem_dl$DL_ppb)]<-0
 
-ph_all_chem_remove<-subset(ph_all_chem_dl, ph_all_chem_dl$value > ph_all_chem_dl$DL_ppb)
+anions<-c("Cl", "Fl", "NO3", "PO4", "SO4")
 
-ph_all_chem_remove<-ph_all_chem_remove %>%
-  group_by(variable) %>%
-  mutate(mean_val=mean(value), sd_val=sd(value))
+#remove all anions with value = 0 (ND value)
+ph_all_chem_remove <- ph_all_chem_dl %>%
+  dplyr::filter(!c(Element %in% anions & value == 0))
 
-write.csv(ph_all_chem_remove, "PH_All_Chem.csv")
+ph_all_chem_remove_ppb <- ph_all_chem_remove %>%
+  mutate(value=case_when(
+    Element=="DIC"~value*1000,
+    Element=="DOC"~value*1000,
+    Element=="Cl"~value*35.45,
+    Element=="Fl"~value*18.99,
+    Element=="NO3"~value*62.005,
+    Element=="PO4"~value*94.97,
+    Element=="SO4"~value*96.06,
+    Element=="NH3_N"~value*1000,
+    .default = value
+  ))
 
-ph_q<-read.csv("/Users/keirajohnson/Box Sync/Keira_Johnson/ER_CQ/PH_Discharge/PH_daily.csv")
+ph_all_chem_remove_ppb<-subset(ph_all_chem_remove_ppb, ph_all_chem_remove_ppb$value > ph_all_chem_remove_ppb$DL_ppb)
 
-ph_q_melt<-melt(ph_q, id.vars=c("Wyday", "date"))
+ph_all_chem_remove_ppb<-ph_all_chem_remove_ppb %>%
+  dplyr::filter(!c(variable=="aluminum" & value > 2000)) %>%
+  dplyr::group_by(variable) %>%
+  dplyr::mutate(mean_val=mean(value), sd_val=sd(value))
 
-ph_q_melt$date2<-as.Date(ph_q_melt$date, format = "%d-%b")
+write.csv(ph_all_chem_remove_ppb, "PH_All_Chem.csv")
 
-ph_q_melt$wateryear<-as.numeric(gsub("X","", ph_q_melt$variable))
+setwd("/Users/keirajohnson/Box Sync/Keira_Johnson/ER_CQ")
 
-ph_q_melt$year<-ifelse(ph_q_melt$Wyday < 93, ph_q_melt$wateryear-1, ph_q_melt$wateryear)
+ph_q<-read.csv("Daily_ER_PH_Q.csv")
 
-ph_q_melt$date_final<-gsub("2024", "", ph_q_melt$date2)
-
-ph_q_melt$date_final<-as.Date(paste0(ph_q_melt$year, ph_q_melt$date_final))
-
-ph_q<-ph_q_melt[,c(8,4)]
+ph_q<-ph_q[,-1]
 
 colnames(ph_q)<-c("date", "discharge")
 
 ph_q$date<-as.Date(ph_q$date)
 
-write.csv(ph_q, "Pumphouse_Q_Daily_Clean.csv")
-
-ph_all_chem_q<-merge(ph_all_chem_remove, ph_q, by="date")
+ph_all_chem_q<-merge(ph_all_chem_remove_ppb, ph_q, by="date")
 
 write.csv(ph_all_chem_q, "PH_CQ.csv")
 
-ggplot(ph_all_chem_q, aes(log10(discharge),log10(value)))+geom_point()+facet_wrap(~variable, scales = "free")+
-  theme_bw()
+#### same for Coal Creek ####
 
 setwd("/Users/keirajohnson/Box Sync/Keira_Johnson/ER_CQ/Coal11")
 
@@ -83,13 +97,13 @@ for (i in 1:length(coal_files)) {
   
   chem1<-read.csv(coal_files[i])
   
-  col_name<-paste0(colnames(chem1[2]), "_", chem1[1,2])
+  chem1<-chem1[,-3]
+  
+  col_name<-colnames(chem1[2])
   
   colnames(chem1)<-c("date", "value")
   
   chem1$variable<-col_name
-  
-  chem1<-chem1[-1,]
   
   chem1$date<-as.Date(chem1$date)
   
@@ -105,32 +119,51 @@ coal_all_chem<-do.call(bind_rows, coal_list)
 
 dl<-read.csv("/Users/keirajohnson/Box Sync/Keira_Johnson/ER_CQ/PH_Cation_DL.csv")
 
+colnames(dl)[3]<-"variable_units"
+
+dl$variable<-sub("_.*", "", dl$variable_units)
+
+dl[45,5]<-"ammonia_n"
+
 coal_all_chem_dl<-full_join(coal_all_chem, dl)
 
 coal_all_chem_dl$DL_ppb[is.na(coal_all_chem_dl$DL_ppb)]<-0
 
-coal_all_chem_remove<-subset(coal_all_chem_dl, coal_all_chem_dl$value > coal_all_chem_dl$DL_ppb)
+anions<-c("Cl", "Fl", "NO3", "PO4", "SO4")
 
-coal_all_chem_remove<-coal_all_chem_remove %>%
-  group_by(variable) %>%
-  mutate(mean_val=mean(value), sd_val=sd(value))
+#remove all anions with value = 0 (ND value)
+coal_all_chem_remove <- coal_all_chem_dl %>%
+  dplyr::filter(!c(Element %in% anions & value == 0))
 
-write.csv(coal_all_chem_remove, "Coal_All_Chem.csv")
+coal_all_chem_remove_ppb <- coal_all_chem_remove %>%
+  mutate(value=case_when(
+    Element=="DIC"~value*1000,
+    Element=="DOC"~value*1000,
+    Element=="Cl"~value*35.45,
+    Element=="Fl"~value*18.99,
+    Element=="NO3"~value*62.005,
+    Element=="PO4"~value*94.97,
+    Element=="SO4"~value*96.06,
+    Element=="NH3_N"~value*1000,
+    .default = value
+  ))
 
-setwd("/Users/keirajohnson/Box Sync/Keira_Johnson/ER_CQ/Coal11")
+coal_all_chem_remove_ppb<-subset(coal_all_chem_remove_ppb, coal_all_chem_remove_ppb$value > coal_all_chem_remove_ppb$DL_ppb)
 
-cc_chem<-read.csv("Coal_All_Chem.csv")
-cc_chem$date<-as.Date(cc_chem$date)
+coal_all_chem_remove_ppb<-coal_all_chem_remove_ppb %>%
+  dplyr::filter(!c(variable=="aluminum" & value > 2000)) %>%
+  dplyr::group_by(variable) %>%
+  dplyr::mutate(mean_val=mean(value), sd_val=sd(value))
 
-cc_q<-read.csv("/Users/keirajohnson/Box Sync/Keira_Johnson/ER_CQ/Coal_Creek_wy15_22_daily.csv")
-cc_q$date<-as.Date(cc_q$date, "%m/%d/%y")
-cc_q<-cc_q[,c(1,2)]
+write.csv(coal_all_chem_remove_ppb, "Coal_All_Chem.csv")
 
-cc_cq<-merge(cc_chem, cc_q, by="date")
-cc_cq<-cc_cq[,-2]
+setwd("/Users/keirajohnson/Box Sync/Keira_Johnson/ER_CQ")
+
+cc_q<-read.csv("/Users/keirajohnson/Box Sync/Keira_Johnson/ER_CQ/Coal_Creek_wy15_24_daily.csv")
+cc_q$Date<-as.Date(cc_q$Date, "%m/%d/%y")
+colnames(cc_q)[1]<-"date"
+
+cc_cq<-merge(coal_all_chem_remove_ppb, cc_q, by="date")
 
 write.csv(cc_cq, "CoalCreek_CQ.csv")
-
-ggplot(cc_cq, aes(log10(CC_Q_cms),log10(value)))+geom_point()+facet_wrap(~variable, scales = "free")+
-  theme_bw()
 

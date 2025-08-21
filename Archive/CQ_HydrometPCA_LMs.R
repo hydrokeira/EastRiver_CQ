@@ -1,4 +1,4 @@
-install.packages("snotelr")
+#install.packages("snotelr")
 require(snotelr)
 require(PCAtools)
 
@@ -58,9 +58,7 @@ storage_metrics$gs_temp_lag<-lag(storage_metrics$gs_temp, n=1)
 ERCQ_CC<-read.csv("CoalCreek_CQ.csv")
 ERCQ_CC$site<-"Coal Creek"
 
-ER_CQ_all<-bind_rows(ERCQ_CC, ERCQ_PH)
-
-ggplot(ER_CQ_all, aes(site, value, fill=site))+geom_boxplot(outliers = F)+facet_wrap(~variable, scales = "free_y")
+ERCQ<-ERCQ_CC
 
 ERCQ$date<-as.Date(ERCQ$date)
 
@@ -149,8 +147,34 @@ cq_pca_melt<-cq_pca_melt %>%
   mutate(p_val=coef(summary(lm(slope~value)))[2,4])
 
 ggplot(cq_pca_melt, aes(value, slope, col=variable))+geom_point()+
-  geom_smooth(data=cq_pca_melt[cq_pca_melt$p_val < 0.15,], aes(value, slope, col=variable), method = "lm", se=F)+
+  geom_smooth(data=cq_pca_melt[cq_pca_melt$p_val < 0.1,], aes(value, slope, col=variable), method = "lm", se=F)+
   facet_wrap(~solute, scales = "free_y")+theme_bw()
+
+cq_pca_melt_sig<-subset(cq_pca_melt, cq_pca_melt$p_val < 0.1)
+
+solute_class<-read.csv("solute_classification.csv")
+colnames(solute_class)[1]<-"solute"
+
+conversion<-data.frame(t(data.frame(c("1", "geogenic"),
+                                    c("2", "bioavailable"),
+                                    c("3", "metal"),
+                                    c("4", "other"))))
+
+colnames(conversion)<-c("number","class")
+conversion$number<-as.integer(conversion$number)
+
+cq_pca_melt_sig<-left_join(cq_pca_melt_sig, solute_class, by="solute")
+cq_pca_melt_sig<-left_join(cq_pca_melt_sig, conversion, by="number")
+
+cq_pca_melt_sig<-cq_pca_melt_sig[!duplicated(cq_pca_melt_sig$solute),]
+
+p10<-ggplot(cq_pca_melt_sig, aes(x=variable, fill=class))+geom_bar(stat = "count")+theme_bw()+
+  theme(text = element_text(size=20))+
+  scale_fill_manual(values = c("bioavailable"="dodgerblue", "metal"="goldenrod", "geogenic"="firebrick"))+
+  labs(x="", y="Count", fill="Solute Class")+
+  ggtitle("Coal Creek")
+
+p10
 
 ####Pumphouse####
 snotel<-snotel_download(site_id = 737, internal = T)
@@ -193,9 +217,12 @@ storage_metrics$gs_temp_lag<-lag(storage_metrics$gs_temp, n=1)
 ERCQ_PH<-read.csv("PH_CQ.csv")
 ERCQ_PH$site<-"East River"
 
-ER_PH_oneday<-subset(ERCQ_PH, ERCQ_PH$date=="2016-04-28")
+# ER_CQ_all<-bind_rows(ERCQ_CC, ERCQ_PH)
+# 
+# ggplot(ER_CQ_all, aes(site, value, fill=site))+geom_boxplot(outliers = F)+facet_wrap(~variable, scales = "free_y")+
+#   theme(text = element_text(size = 15), axis.text.x = element_blank())+labs(x="", y="Concentration")
 
-sum(ER_PH_oneday$value)
+ERCQ<-ERCQ_PH
 
 ERCQ$date<-as.Date(ERCQ$date)
 
@@ -267,7 +294,7 @@ p3<-ggplot()+
 
 ggarrange(p1, p2, p3, nrow=1)
 
-pc_dat<-data.frame(c(seq(2016,2022,1)),
+pc_dat<-data.frame(c(seq(2015,2022,1)),
                    c(pc_loadings$PC1),
                    c(pc_loadings$PC2),
                    c(pc_loadings$PC3))
@@ -284,6 +311,34 @@ cq_pca_melt<-cq_pca_melt %>%
   mutate(p_val=coef(summary(lm(slope~value)))[2,4])
 
 ggplot(cq_pca_melt, aes(value, slope, col=variable))+geom_point()+
-  geom_smooth(data=cq_pca_melt[cq_pca_melt$p_val < 0.15,], aes(value, slope, col=variable), method = "lm", se=F)+
+  geom_smooth(data=cq_pca_melt[cq_pca_melt$p_val < 0.1,], aes(value, slope, col=variable), method = "lm", se=F)+
   facet_wrap(~solute, scales = "free_y")+theme_bw()
+
+cq_pca_melt_sig<-subset(cq_pca_melt, cq_pca_melt$p_val < 0.1)
+
+solute_class<-read.csv("solute_classification.csv")
+colnames(solute_class)[1]<-"solute"
+
+conversion<-data.frame(t(data.frame(c("1", "geogenic"),
+                                    c("2", "bioavailable"),
+                                    c("3", "metal"),
+                                    c("4", "other"))))
+
+colnames(conversion)<-c("number","class")
+conversion$number<-as.integer(conversion$number)
+
+cq_pca_melt_sig<-left_join(cq_pca_melt_sig, solute_class, by="solute")
+cq_pca_melt_sig<-left_join(cq_pca_melt_sig, conversion, by="number")
+
+cq_pca_melt_sig<-cq_pca_melt_sig[!duplicated(cq_pca_melt_sig$solute),]
+
+p11<-ggplot(cq_pca_melt_sig, aes(x=variable, fill=class))+geom_bar(stat = "count")+theme_bw()+
+  theme(text = element_text(size=20), legend.position = "null")+
+  scale_fill_manual(values = c("bioavailable"="dodgerblue", "metal"="goldenrod", "geogenic"="firebrick"))+
+  labs(x="", y="Count", fill="Solute Class")+ylim(0,8)+
+  ggtitle("East River")
+
+p11
+
+ggarrange(p11, p10, widths = c(0.45, 0.55))
 
