@@ -16,6 +16,7 @@ remove<-rownames(subset(na_table, na_table$t.na_table. > 200))
 
 remove<-remove[-10]
 
+#remove_total<-c(remove)
 remove_total<-c(remove, remove2_cc)
 
 coal_wide<-coal_wide %>%
@@ -35,7 +36,11 @@ rownames(metadata)<-coal_wide_cc$date
 
 pca<-pca(final_mat_t, metadata = metadata)
 
-screeplot(pca)
+s1<-screeplot(pca)+theme_classic()+
+  theme(text = element_text(size=20), axis.text.x = element_text(angle = 45, hjust = 1))+
+  ggtitle("Coal Creek")
+
+s1
 
 loadings_cc<-as.data.frame(pca$loadings)
 
@@ -56,6 +61,40 @@ p1<-ggplot()+
   ggtitle("Coal Creek")
 
 p1
+
+c1<-ggplot()+
+  geom_segment(loadings_cc, mapping=aes(x=0, y=0, xend=PC1*30, yend=PC3*30))+
+  geom_segment(loadings_cc, mapping=aes(x=0, y=0, xend=PC1*30, yend=PC3*30), 
+               arrow = arrow(angle=22.5,length = unit(0.35,"cm"),type = "closed"), 
+               lty="blank", size=0.6, col="black")+
+  geom_point(pc_loadings_cc, mapping = aes(PC1, PC3, col=as.factor(month(date))), size=2.5)+theme_classic()+
+  geom_text_repel(data = loadings_cc,aes(PC1*30,PC3*30,label=rownames(loadings_cc)), size=4.5)+
+  labs(x= "PC1 27% variation", y="PC3 9% variation", col="Month")+
+  theme(text = element_text(size=20), legend.position = "null")+
+  scale_color_manual(values = cet_pal(12, "cbtc1"))
+  #ggtitle("Coal Creek")
+
+c1
+
+c2<-ggplot()+
+  geom_segment(loadings_cc, mapping=aes(x=0, y=0, xend=PC2*30, yend=PC3*30))+
+  geom_segment(loadings_cc, mapping=aes(x=0, y=0, xend=PC2*30, yend=PC3*30), 
+               arrow = arrow(angle=22.5,length = unit(0.35,"cm"),type = "closed"), 
+               lty="blank", size=0.6, col="black")+
+  geom_point(pc_loadings_cc, mapping = aes(PC2, PC3, col=as.factor(month(date))), size=2.5)+theme_classic()+
+  geom_text_repel(data = loadings_cc,aes(PC2*30,PC3*30,label=rownames(loadings_cc)), size=4.5)+
+  labs(x= "PC2 18% variation", y="PC3 9% variation", col="Month")+
+  theme(text = element_text(size=20), legend.position = "null")+
+  scale_color_manual(values = cet_pal(12, "cbtc1"))
+  #ggtitle("Coal Creek")
+
+c2
+
+pdf("Coal_Creek_PCA_3PC.pdf", width = 15, height = 5)
+
+ggarrange(p1, c1, c2, nrow = 1, align = "h")
+
+dev.off()
 
 ph_chem<-read.csv("PH_All_Chem.csv")
 
@@ -92,7 +131,9 @@ rownames(metadata)<-ph_wide_cc$date
 
 pca<-pca(final_mat_t, metadata = metadata)
 
-screeplot(pca)
+s2<-screeplot(pca)+theme_classic()+
+  theme(text = element_text(size=20), axis.text.x = element_text(angle = 45, hjust = 1))+
+  ggtitle("East River")
 
 loadings_ph<-as.data.frame(pca$loadings)
 
@@ -113,6 +154,46 @@ p2<-ggplot()+
   ggtitle("East River")
 
 p2
+
+k1<-ggplot()+
+  geom_segment(loadings_ph, mapping=aes(x=0, y=0, xend=PC1*30, yend=PC3*30))+
+  geom_segment(loadings_ph, mapping=aes(x=0, y=0, xend=PC1*30, yend=PC3*30), 
+               arrow = arrow(angle=22.5,length = unit(0.35,"cm"),type = "closed"), 
+               lty="blank", size=0.6, col="black")+
+  geom_point(pc_loadings_ph, mapping = aes(PC1, PC3, col=as.factor(month(date))), size=2.5)+theme_classic()+
+  geom_text_repel(data = loadings_ph,aes(PC1*30,PC3*30,label=rownames(loadings_ph)), size=4.5)+
+  labs(x= "PC1 30% variation", y="PC3 8% variation", col="Month")+
+  theme(text = element_text(size=20), legend.position = "null")+
+  scale_color_manual(values = cet_pal(12, "cbtc1"))
+  #ggtitle("East River")
+
+k1
+
+k2<-ggplot()+
+  geom_segment(loadings_ph, mapping=aes(x=0, y=0, xend=PC2*30, yend=PC3*30))+
+  geom_segment(loadings_ph, mapping=aes(x=0, y=0, xend=PC2*30, yend=PC3*30), 
+               arrow = arrow(angle=22.5,length = unit(0.35,"cm"),type = "closed"), 
+               lty="blank", size=0.6, col="black")+
+  geom_point(pc_loadings_ph, mapping = aes(PC2, PC3, col=as.factor(month(date))), size=2.5)+theme_classic()+
+  geom_text_repel(data = loadings_ph,aes(PC2*30,PC3*30,label=rownames(loadings_ph)), size=4.5)+
+  labs(x= "PC2 12% variation", y="PC3 8% variation", col="Month")+
+  theme(text = element_text(size=20), legend.position = "null")+
+  scale_color_manual(values = cet_pal(12, "cbtc1"))
+  #ggtitle("East River")
+
+k2
+
+pdf("East_River_PCA_3PC.pdf", width = 15, height = 5)
+
+ggarrange(p2, k1, k2, nrow = 1, align = "h")
+
+dev.off()
+
+pdf("Scree_Plots_PCA.pdf", width = 8, height = 11)
+
+ggarrange(s1, s2, nrow = 2)
+
+dev.off()
 
 pdf("ER_CC_PCA_Same_Solutes.pdf", width = 15, height = 7)
 
