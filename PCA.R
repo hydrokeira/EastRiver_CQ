@@ -8,6 +8,9 @@ coal_chem<-read.csv("Coal_All_Chem.csv")
 coal_wide<- coal_chem[,c(2,3,5)] %>%
   pivot_wider(names_from = Element, values_from = value, values_fn = mean)
 
+# kept_solutes<-c("Ba", "Ca", "Cl", "DIC", "Mg", "Si", "Na", "Sr", "SO4", "U", "Al", "As", "Co", "Cu",
+#                 "Fe", "Mn", "Ni", "V", "Zn", "DOC", "NO3", "K")
+
 na_table<-coal_wide %>% summarise_all(~ sum(is.na(.)))
 
 na_table<-data.frame(t(na_table))
@@ -21,6 +24,9 @@ remove_total<-c(remove, remove2_cc)
 
 coal_wide<-coal_wide %>%
   select(!all_of(remove_total))
+# 
+# coal_wide<-coal_wide %>%
+#   select(all_of(c("date", kept_solutes)))
 
 coal_wide_cc<-coal_wide[c(complete.cases(coal_wide)),]
 
@@ -84,15 +90,15 @@ c2<-ggplot()+
   geom_point(pc_loadings_cc, mapping = aes(PC2, PC3, col=as.factor(month(date))), size=2.5)+theme_classic()+
   geom_text_repel(data = loadings_cc,aes(PC2*30,PC3*30,label=rownames(loadings_cc)), size=4.5)+
   labs(x= "PC2 18% variation", y="PC3 9% variation", col="Month")+
-  theme(text = element_text(size=20), legend.position = "null")+
+  theme(text = element_text(size=20))+
   scale_color_manual(values = cet_pal(12, "cbtc1"))
   #ggtitle("Coal Creek")
 
 c2
 
-pdf("Coal_Creek_PCA_3PC.pdf", width = 15, height = 5)
+pdf("Coal_Creek_PCA_3PC.pdf", width = 15.5, height = 5)
 
-ggarrange(p1, c1, c2, nrow = 1, align = "h")
+ggarrange(p1, c1, c2, nrow = 1, align = "h", widths = c(0.5, 0.5, 0.6))
 
 dev.off()
 
@@ -109,6 +115,7 @@ remove<-rownames(subset(na_table, na_table$t.na_table. > 400))
 
 remove<-remove[-c(8,13)]
 
+#remove_total<-c(remove)
 remove_total<-c(remove, remove2_ph)
 
 outliers<-c("2016-01-03", "2019-09-23")
@@ -177,25 +184,25 @@ k2<-ggplot()+
   geom_point(pc_loadings_ph, mapping = aes(PC2, PC3, col=as.factor(month(date))), size=2.5)+theme_classic()+
   geom_text_repel(data = loadings_ph,aes(PC2*30,PC3*30,label=rownames(loadings_ph)), size=4.5)+
   labs(x= "PC2 12% variation", y="PC3 8% variation", col="Month")+
-  theme(text = element_text(size=20), legend.position = "null")+
+  theme(text = element_text(size=20))+
   scale_color_manual(values = cet_pal(12, "cbtc1"))
   #ggtitle("East River")
 
 k2
 
-pdf("East_River_PCA_3PC.pdf", width = 15, height = 5)
+pdf("East_River_PCA_3PC.pdf", width = 15.5, height = 5)
 
-ggarrange(p2, k1, k2, nrow = 1, align = "h")
-
-dev.off()
-
-pdf("Scree_Plots_PCA.pdf", width = 8, height = 11)
-
-ggarrange(s1, s2, nrow = 2)
+ggarrange(p2, k1, k2, nrow = 1, align = "h", widths = c(0.5, 0.5, 0.6))
 
 dev.off()
 
-pdf("ER_CC_PCA_Same_Solutes.pdf", width = 15, height = 7)
+pdf("Scree_Plots_PCA.pdf", width = 14, height = 5)
+
+ggarrange(s1, s2, nrow = 1)
+
+dev.off()
+
+pdf("ER_CC_PCA_Same_Solutes.pdf", width = 15, h11 ght = 7)
 
 ggarrange(p1, p2, widths = c(0.45, 0.5))
 
@@ -272,6 +279,3 @@ ggarrange(k2, k1, heights = c(0.5, 0.62), nrow = 2)
 dev.off()
 
 p2
-
-
-

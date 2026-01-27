@@ -75,7 +75,6 @@ p6<-ggplot(bf_cq_stats, aes(x = Class, y = res_std_error, fill=Class)) +
 
 p7<-ggarrange(p1, p4, p2, p5, p3, p6, nrow=3, ncol=2, align = "hv")
 
-
 pdf("CQ_BF_performance_CoalCreek.pdf", width = 12, height = 12)
 
 annotate_figure(p7, top = text_grob("Coal Creek", size=20))

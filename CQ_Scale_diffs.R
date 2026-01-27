@@ -2,6 +2,7 @@ require(ggpubr)
 require(ggplot2)
 require(EflowStats)
 require(lubridate)
+require(car)
 
 co_var=function(x){
   val=mean(x)/sd(x)
@@ -91,11 +92,11 @@ p1_alt<-ggplot(ercq_allscales, aes(Class, slope))+
   geom_hline(yintercept = 0)+
   geom_hline(yintercept = -0.2, linetype="dashed")+
   geom_hline(yintercept = 0.2, linetype="dashed")+
-  geom_jitter(alpha=0.3, aes(col=scale), position=position_jitterdodge(jitter.width = 0.15,
-                                                                       jitter.height = 0.15,
-                                                                       dodge.width = 0.9))+
-  geom_violin(aes(col=scale), alpha=0, size=1, scale="width")+ylim(-2,2)+theme_classic()+
-  #geom_boxplot(alpha=0, outliers = F)+theme_bw()+ylim(-2,2)+
+  geom_violin(aes(col=scale), alpha=0.7, size=0.7, scale="width", width=0.8,
+              position = position_dodge(width = 0.9))+
+  ylim(-2,2)+
+  theme_classic()+
+  geom_jitter(size=0.7, aes(col=scale), position=position_jitterdodge(jitter.width = 0.15,dodge.width = 0.9))+
   scale_fill_manual(values = c("overall"="black", "annual"="grey40", "monthly"="grey70"))+
   scale_color_manual(values = c("overall"="black", "annual"="grey40", "monthly"="grey70"))+
   theme(text = element_text(size = 20), legend.position = "bottom")+
@@ -163,11 +164,11 @@ cq_facet_er<-ggplot(prop_cq_melt_facet, aes(scale, value, fill=variable))+geom_b
   labs(x="", y="Proportion of Observations", fill="")+
   theme(text = element_text(size=20), legend.position = "bottom")+ylim(0,1)+
   facet_wrap(~Class)+
-  scale_x_discrete(labels=c("9-year avg", "annual", "monthly"))+ggtitle("East River")
+  scale_x_discrete(labels=c("9-year avg", "annual", "monthly"))
 
 cq_facet_er
 
-er_gg<-ggarrange(p1_alt, cq_facet_er, nrow = 1, widths = c(0.4, 1))
+er_gg<-ggarrange(p1_alt, cq_facet_er, nrow = 1, widths = c(0.4, 1), align = "h")
 
 er_gg
 
@@ -246,11 +247,9 @@ p4_alt<-ggplot(ercq_allscales, aes(Class, slope))+
   geom_hline(yintercept = 0)+
   geom_hline(yintercept = -0.2, linetype="dashed")+
   geom_hline(yintercept = 0.2, linetype="dashed")+
-  geom_jitter(alpha=0.3, aes(col=scale), position=position_jitterdodge(jitter.width = 0.15,
-                                                                       jitter.height = 0.15,
-                                                                       dodge.width = 0.9))+
-  geom_violin(aes(col=scale), alpha=0, size=1, scale="width")+ylim(-2,2)+theme_classic()+
-  #geom_boxplot(alpha=0, outliers = F)+theme_bw()+ylim(-2,2)+
+  geom_violin(aes(col=scale), alpha=0.7, size=0.7, scale="width", width=0.8,
+              position = position_dodge(width = 0.9))+ylim(-2,2)+theme_classic()+
+  geom_jitter(size=0.7, aes(col=scale), position=position_jitterdodge(jitter.width = 0.15,dodge.width = 0.9))+
   scale_fill_manual(values = c("overall"="black", "annual"="grey40", "monthly"="grey70"))+
   scale_color_manual(values = c("overall"="black", "annual"="grey40", "monthly"="grey70"))+
   theme(text = element_text(size = 20), legend.position = "null")+
@@ -317,32 +316,17 @@ cq_facet_cc<-ggplot(prop_cq_melt_facet, aes(scale, value, fill=variable))+geom_b
   labs(x="", y="Proportion of Observations", fill="C-Q Behavior")+
   theme(text = element_text(size=20), legend.position = "null")+ylim(0,1)+
   facet_wrap(~Class)+
-  scale_x_discrete(labels=c("9-year avg", "annual", "monthly"))+ggtitle("Coal Creek")
+  scale_x_discrete(labels=c("9-year avg", "annual", "monthly"))
 
 cq_facet_cc
 
-cc_gg<-ggarrange(p4_alt, cq_facet_cc, nrow = 1, widths = c(0.4, 1))
+cc_gg<-ggarrange(p4_alt, cq_facet_cc, nrow = 1, widths = c(0.4, 1), align = "h")
 
 cc_gg
 
 pdf("Figure2.pdf",width = 15, height = 9.5)
 
 ggarrange(cc_gg, er_gg, nrow = 2, heights = c(1,1.2))
-
-dev.off()
-
-pdf("CC_ER_propCQ_facet_solute.pdf", width = 13.5, height = 8)
-
-ggarrange(cq_facet_cc, cq_facet_er, nrow=2)
-
-dev.off()
-
-cc<-ggarrange(p4_alt, p5, align = "v", nrow = 2)
-er<-ggarrange(p1_alt, p2, align = "v", nrow=2)
-
-pdf("Scale_CQ_ERCC_updated.pdf", width = 12, height = 8)
-
-ggarrange(cc, er, ncol = 2, widths = c(0.38, 0.55), align = "h")
 
 dev.off()
 
